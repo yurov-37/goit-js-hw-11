@@ -7,10 +7,11 @@ export default class ImgApiService {
   constructor() {
     this.searchInput = '';
     this.page = 1;
+    this.currentHits = 0;
   }
 
   fetchImages() {
-    // console.log('до запроса', this);
+    console.log('до запроса', this);
     return fetch(
       `${URL}/?key=${KEY}&q=${this.searchInput}&image_type=photo&orientation=horizontal&safesearch=true&page=${this.page}&per_page=40`
     )
@@ -21,18 +22,27 @@ export default class ImgApiService {
         return response.json();
       })
       .then(({ hits, total, totalHits }) => {
-        this.page += 1;
-        // console.log('посел запроса если все ОК', this);
-        // console.log(hits);
-        // console.log(totalHits);
-        if (total === 0) {
+        if (this.page === 1 && totalHits) {
+          Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
+        } else if (total === 0) {
           Notiflix.Notify.failure(
             'Sorry, there are no images matching your search query. Please try again.'
           );
           return;
+        } else if (this.currentHits >= totalHits) {
+          Notiflix.Notify.warning(
+            "We're sorry, but you've reached the end of search results."
+          );
+          return;
         }
+        this.page += 1;
+        this.currentHits += hits.length;
+        console.log('посел запроса если все ОК', this);
+        console.log(hits);
+        console.log(totalHits);
+        // console.log(total);
 
-        Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
+        // Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
         return hits;
       })
       .catch(error => console.log(error));
@@ -49,4 +59,12 @@ export default class ImgApiService {
   set inputTitle(newTitle) {
     this.searchInput = newTitle;
   }
+
+  // get currentHits() {
+  //   return this.currentHits;
+  // }
+
+  // set currentHits(newHits) {
+  //   this.currentHits = newHits;
+  // }
 }

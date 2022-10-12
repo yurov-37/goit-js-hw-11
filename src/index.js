@@ -1,14 +1,14 @@
 import ImgApiService from './components/api-service';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-// import Notiflix from 'notiflix';
+import Notiflix from 'notiflix';
 
 const searchForm = document.querySelector('.search-form');
 const imgContainer = document.querySelector('.gallery');
 const loadMoreBtn = document.querySelector('.load-more');
 let gallerySimpleLightbox = new SimpleLightbox('.gallery a');
 
-loadMoreBtn.style.display = 'none';
+// loadMoreBtn.style.display = 'none';
 
 const imgApiService = new ImgApiService();
 console.log(imgApiService);
@@ -23,7 +23,7 @@ function onSearchImages(evt) {
     evt.currentTarget.elements.searchQuery.value.trim();
 
   if (imgApiService.inputTitle === '') {
-    return alert('Введи что-то нормальное');
+    return Notiflix.Notify.warning('Поле должно быть заполнено');
   }
   imgApiService.resetPage();
   imgApiService
@@ -41,13 +41,14 @@ function onLoadMore() {
   imgApiService
     .fetchImages()
     .then(hits => {
+      console.log(hits);
       imgContainer.insertAdjacentHTML('beforeend', createImagesMarkup(hits));
       gallerySimpleLightbox.refresh();
     })
     .catch(err => {
       console.log(err);
       //   loadMoreBtn.setAttribute('disabled');
-      alert("We're sorry, but you've reached the end of search results.");
+      //   alert("We're sorry, but you've reached the end of search results.");
     });
 }
 
