@@ -4,51 +4,95 @@ import 'simplelightbox/dist/simple-lightbox.min.css';
 import Notiflix from 'notiflix';
 
 const searchForm = document.querySelector('.search-form');
+const formInput = document.querySelector('.search-text');
 const imgContainer = document.querySelector('.gallery');
 const loadMoreBtn = document.querySelector('.load-more');
-let gallerySimpleLightbox = new SimpleLightbox('.gallery a');
-
-// loadMoreBtn.style.display = 'none';
+const preloader = document.querySelectorAll('.lds-roller div');
 
 const imgApiService = new ImgApiService();
-console.log(imgApiService);
+let gallerySimpleLightbox = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionDelay: 250,
+});
+
+loadMoreBtn.style.display = 'none';
+preloader.forEach(e => {
+  e.style.display = 'none';
+});
 
 searchForm.addEventListener('submit', onSearchImages);
 loadMoreBtn.addEventListener('click', onLoadMore);
 
 function onSearchImages(evt) {
   evt.preventDefault();
-  clearImagesContainer();
+
   imgApiService.inputTitle =
     evt.currentTarget.elements.searchQuery.value.trim();
 
   if (imgApiService.inputTitle === '') {
-    return Notiflix.Notify.warning('Поле должно быть заполнено');
+    Notiflix.Notify.warning('Field must not be empty');
+    formInput.value = '';
+    return;
   }
+
+  preloader.forEach(e => {
+    e.style.display = 'block';
+  });
+  loadMoreBtn.style.display = 'none';
+
   imgApiService.resetPage();
+  imgApiService.resetCurrentHits();
+  clearImagesContainer();
+  formInput.value = '';
+
   imgApiService
     .fetchImages()
     .then(hits => {
-      console.log(hits);
-
       imgContainer.insertAdjacentHTML('beforeend', createImagesMarkup(hits));
       gallerySimpleLightbox.refresh();
-    })
-    .catch(err => console.log(err));
-}
-
-function onLoadMore() {
-  imgApiService
-    .fetchImages()
-    .then(hits => {
-      console.log(hits);
-      imgContainer.insertAdjacentHTML('beforeend', createImagesMarkup(hits));
-      gallerySimpleLightbox.refresh();
+      preloader.forEach(e => {
+        e.style.display = 'none';
+      });
+      loadMoreBtn.style.display = 'block';
+      if (hits.length < 40) {
+        loadMoreBtn.style.display = 'none';
+      }
     })
     .catch(err => {
       console.log(err);
-      //   loadMoreBtn.setAttribute('disabled');
-      //   alert("We're sorry, but you've reached the end of search results.");
+      preloader.forEach(e => {
+        e.style.display = 'none';
+      });
+    });
+}
+
+function onLoadMore() {
+  loadMoreBtn.style.display = 'none';
+  preloader.forEach(e => {
+    e.style.display = 'block';
+  });
+  imgApiService
+    .fetchImages()
+    .then(hits => {
+      imgContainer.insertAdjacentHTML('beforeend', createImagesMarkup(hits));
+      gallerySimpleLightbox.refresh();
+      preloader.forEach(e => {
+        e.style.display = 'none';
+      });
+      loadMoreBtn.style.display = 'block';
+      const { height: cardHeight } =
+        imgContainer.firstElementChild.getBoundingClientRect();
+
+      window.scrollBy({
+        top: cardHeight * 2,
+        behavior: 'smooth',
+      });
+      if (hits.length < 40) {
+        loadMoreBtn.style.display = 'none';
+      }
+    })
+    .catch(err => {
+      console.log(err);
     });
 }
 
@@ -89,32 +133,4 @@ function createImagesMarkup(images) {
 
 function clearImagesContainer() {
   imgContainer.innerHTML = '';
-}
-
-// webformatURL - ссылка на маленькое изображение для списка карточек.
-// largeImageURL - ссылка на большое изображение.
-// tags - строка с описанием изображения. Подойдет для атрибута alt.
-// likes - количество лайков.
-// views - количество просмотров.
-// comments - количество комментариев.
-// downloads - количество загрузок.
-
-{
-  /* <div class="photo-card">
-  <img src="" alt="" loading="lazy" />
-  <div class="info">
-    <p class="info-item">
-      <b>Likes</b>
-    </p>
-    <p class="info-item">
-      <b>Views</b>
-    </p>
-    <p class="info-item">
-      <b>Comments</b>
-    </p>
-    <p class="info-item">
-      <b>Downloads</b>
-    </p>
-  </div>
-</div>; */
 }
